@@ -229,9 +229,8 @@ impl OpCode {
             }
             OpCode::TRAP => {
                 let trap = Trap::from_raw_intr(raw_instr);
-                trap.execute()
+                trap.execute(vm)
             }
-            _ => Err(VMError::OPCodeDoesNotExist),
         }
     }
 }

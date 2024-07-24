@@ -1,3 +1,10 @@
+use std::io::{stdin, stdout, Read, Write};
+
+use crate::{
+    register::Register,
+    vm::{VMError, VM},
+};
+
 pub enum Trap {
     GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
     OUT = 0x21,   /* output a character */
@@ -20,25 +27,66 @@ impl Trap {
         }
     }
 
-    pub fn execute(&self) {
+    pub fn execute(&self, vm: &mut VM) -> Result<(), VMError> {
         match self {
             Trap::GETC => {
-                println!("Executing GETC trap");
+                let mut buf = [0; 1];
+                stdin().read_exact(&mut buf).unwrap();
+                vm.set_register(Register::R0 as u16, buf[0] as u16);
+
+                Ok(())
             }
             Trap::OUT => {
-                println!("Executing OUT trap");
-            }
-            Trap::PUTS => {
-                println!("Executing PUTS trap");
+                let value = vm.get_register(Register::R0 as u16) as u8 as char;
+                print!("{}", value);
+
+                Ok(())
             }
             Trap::IN => {
-                println!("Executing IN trap");
+                print!("Enter a character: ");
+                stdout().flush().expect("Could not flush stdout");
+                let value = stdin().bytes().nth(0).unwrap().unwrap();
+                vm.set_register(Register::R0 as u16, value as u16);
+                Ok(())
+            }
+            Trap::PUTS => {
+                let mut address = vm.get_register(Register::R0 as u16);
+                let mut c = vm.read_from_memory(address);
+                while c != 0x0 {
+                    print!("{}", c as u8 as char);
+                    address += 1;
+                    c = vm.read_from_memory(address);
+                }
+
+                stdout().flush().expect("Could not flush stdout");
+
+                Ok(())
             }
             Trap::PUTSP => {
-                println!("Executing PUTSP trap");
+                let mut address = vm.get_register(Register::R0 as u16);
+                let mut c = vm.read_from_memory(address);
+
+                while c != 0x0 {
+                    let c1 = ((c & 0xFF) as u8) as char;
+                    let c2 = ((c >> 8) as u8) as char;
+
+                    print!("{}", c1);
+                    if c2 != '\0' {
+                        print!("{}", c2);
+                    }
+
+                    address += 1;
+                    c = vm.read_from_memory(address);
+                }
+
+                stdout().flush().expect("Could not flush stdout");
+
+                Ok(())
             }
             Trap::HALT => {
-                println!("Executing HALT trap");
+                vm.exit();
+
+                Ok(())
             }
         }
     }
