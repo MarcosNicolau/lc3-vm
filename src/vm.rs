@@ -12,7 +12,10 @@ pub const PC_START: u16 = 0x3000;
 const MEMORY_SIZE: usize = 1 << 16;
 
 #[derive(Debug)]
-pub enum VMError {}
+pub enum VMError {
+    OPCodeDoesNotExist,
+    TrapDoesNotExist,
+}
 
 pub struct VM {
     registers: [u16; 10],
@@ -36,24 +39,24 @@ impl VM {
         Self::default()
     }
 
-    pub fn get_register(&self, register: Register) -> u16 {
+    pub fn get_register(&self, register: u16) -> u16 {
         self.registers[register as usize]
     }
 
-    pub fn set_register(&mut self, register: Register, value: u16) {
+    pub fn set_register(&mut self, register: u16, value: u16) {
         self.registers[register as usize] = value;
     }
 
-    pub fn write_to_memory(&mut self, address: usize, value: u16) {
-        self.memory[address] = value;
+    pub fn write_to_memory(&mut self, address: u16, value: u16) {
+        self.memory[address as usize] = value;
     }
 
-    pub fn read_from_memory(&mut self, address: usize) -> u16 {
-        if address == MMRegister::KBSR as usize {
+    pub fn read_from_memory(&mut self, address: u16) -> u16 {
+        if address == MMRegister::KBSR as u16 {
             self.check_keyboard_status();
         }
 
-        self.memory[address]
+        self.memory[address as usize]
     }
 
     fn check_keyboard_status(&mut self) {
@@ -62,10 +65,10 @@ impl VM {
         stdin().read_exact(&mut buffer).unwrap();
 
         if buffer[0] != 0 {
-            self.write_to_memory(MMRegister::KBSR as usize, 1 << 15);
-            self.write_to_memory(MMRegister::KBDR as usize, buffer[0] as u16);
+            self.write_to_memory(MMRegister::KBSR as u16, 1 << 15);
+            self.write_to_memory(MMRegister::KBDR as u16, buffer[0] as u16);
         } else {
-            self.write_to_memory(MMRegister::KBSR as usize, 0)
+            self.write_to_memory(MMRegister::KBSR as u16, 0)
         }
     }
 
@@ -88,8 +91,8 @@ impl VM {
     }
 
     fn fetch_and_decode(&mut self) -> (OpCode, u16) {
-        let pc = self.get_register(Register::PC);
-        let instr = self.read_from_memory(pc as usize);
+        let pc = self.get_register(Register::PC as u16);
+        let instr = self.read_from_memory(pc as u16);
 
         return (OpCode::from_raw_instr(instr), instr);
     }
@@ -98,7 +101,7 @@ impl VM {
         op_code.execute(raw_instr, self)
     }
 
-    pub fn set_cond_flags(&mut self, register: Register) {
+    pub fn set_cond_flags(&mut self, register: u16) {
         let value = self.get_register(register);
         let cond_flag = match value {
             0 => CondFlag::ZRO,
@@ -106,7 +109,7 @@ impl VM {
             _ => CondFlag::NEG,
         };
 
-        self.set_register(Register::COND, cond_flag as u16);
+        self.set_register(Register::COND as u16, cond_flag as u16);
     }
 
     pub fn exit(&mut self) {
@@ -114,9 +117,9 @@ impl VM {
     }
 
     pub fn run(&mut self, file_path: &str) {
-        self.set_register(Register::PC, PC_START);
-        self.set_cond_flags(Register::R0);
-        self.load_assembly(self.get_register(Register::PC) as usize, file_path);
+        self.set_register(Register::PC as u16, PC_START);
+        self.set_cond_flags(Register::R0 as u16);
+        self.load_assembly(self.get_register(Register::PC as u16) as usize, file_path);
 
         loop {
             let (op_code, instr) = self.fetch_and_decode();
