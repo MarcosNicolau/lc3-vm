@@ -87,7 +87,7 @@ impl VM {
 
         // we'll send as much as the bytes as the memory can hold
         let bytes_to_read = MEMORY_SIZE - origin;
-        read_file_as_u16(file_path, bytes_to_read, &mut self.memory);
+        read_file_as_u16(file_path, bytes_to_read, &mut self.memory, origin);
     }
 
     fn fetch_and_decode(&mut self) -> (OpCode, u16) {

@@ -1,11 +1,16 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn read_file_as_u16(file_path: &str, bytes_to_read: usize, buffer: &mut [u16]) {
+pub fn read_file_as_u16(
+    file_path: &str,
+    bytes_to_read: usize,
+    buffer: &mut [u16],
+    write_from: usize,
+) {
     let mut file = File::open(file_path).expect("file does not exist!");
     let mut buff: Vec<u8> = vec![0; bytes_to_read];
     let bytes_read = file.read(&mut buff).expect("could not read file!");
-    let mut idx = 0;
+    let mut idx = write_from;
 
     while idx < bytes_read {
         /*
