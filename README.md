@@ -5,7 +5,9 @@ LC3 implementation in Rust. Read more [here](https://en.wikipedia.org/wiki/Littl
 ## How to run it
 
 1. Compile the src: `cargo build`
-2. Run the program: `cargo run -p <YOUR_LC3_ASSEMBLY_FILE>`
+2. Run the program: `cargo run <YOUR_LC3_ASSEMBLY_FILE>`
+
+In the [assembly](./assembly/) folder you can find some examples(2048 and Rogue).
 
 ## Structure
 
