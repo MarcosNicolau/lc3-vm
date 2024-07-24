@@ -40,7 +40,7 @@ impl OpCode {
             13 => OpCode::RES,
             14 => OpCode::LEA,
             15 => OpCode::TRAP,
-            _ => panic!("instruction had invalid code"),
+            _ => panic!("Invalid instruction"),
         }
     }
     /**
