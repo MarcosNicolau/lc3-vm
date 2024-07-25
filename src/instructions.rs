@@ -4,6 +4,7 @@ use crate::{
     vm::{VMError, VM},
 };
 
+#[derive(Debug)]
 pub enum OpCode {
     BR = 0, /* branch */
     ADD,    /* add  */
@@ -69,7 +70,7 @@ impl OpCode {
 
                 if (cond_flag & 0x1) == n && (cond_flag & 0x2) == z && (cond_flag & 0x4) == p {
                     let pc = vm.get_register(Register::PC as u16);
-                    vm.set_register(Register::PC as u16, pc + pc_offset);
+                    vm.set_register(Register::PC as u16, pc.wrapping_add(pc_offset));
                 }
 
                 Ok(())
@@ -90,7 +91,7 @@ impl OpCode {
                     vm.set_register(r0, r1_val.wrapping_add(r2_val)); // Wrapping add to handle overflow
                 }
 
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -100,7 +101,7 @@ impl OpCode {
                 let mem_addr = vm.get_register(Register::PC as u16).wrapping_add(pc_offset);
                 let mem_val = vm.read_from_memory(mem_addr);
                 vm.set_register(r0, mem_val);
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -149,7 +150,7 @@ impl OpCode {
                     vm.set_register(r0, r1_val & r2_val);
                 }
 
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -162,7 +163,7 @@ impl OpCode {
                 let mem_addr = base_addr.wrapping_add(offset);
                 let mem_val = vm.read_from_memory(mem_addr);
                 vm.set_register(r0, mem_val);
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -185,7 +186,7 @@ impl OpCode {
 
                 let r1_val = vm.get_register(r1);
                 vm.set_register(r0, !r1_val);
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -196,7 +197,7 @@ impl OpCode {
                 let indirect_addr = vm.read_from_memory(mem_addr);
                 let mem_val = vm.read_from_memory(indirect_addr);
                 vm.set_register(r0, mem_val);
-                vm.set_cond_flags(vm.get_register(r0));
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
@@ -221,9 +222,10 @@ impl OpCode {
             OpCode::LEA => {
                 let r0 = (raw_instr >> 9) & 0x7;
                 let pc_offset = raw_instr & 0x1FF;
-                let mem_addr = vm.get_register(Register::PC as u16).wrapping_add(pc_offset);
-                vm.set_register(r0, mem_addr);
-                vm.set_cond_flags(vm.get_register(r0));
+                let val = vm
+                    .read_from_memory(vm.get_register(Register::PC as u16).wrapping_add(pc_offset));
+                vm.set_register(r0, val);
+                vm.set_cond_flags(r0);
 
                 Ok(())
             }
