@@ -10,7 +10,7 @@ pub fn read_file_as_u16(
     let mut file = File::open(file_path).expect("file does not exist!");
     let mut buff: Vec<u8> = vec![0; bytes_to_read];
     let bytes_read = file.read(&mut buff).expect("could not read file!");
-    let mut idx = write_from;
+    let mut idx = 0;
 
     while idx < bytes_read {
         /*
@@ -28,7 +28,7 @@ pub fn read_file_as_u16(
          */
         let byte1 = buff[idx * 2] as u16;
         let byte2 = buff[idx * 2 + 1] as u16;
-        buffer[idx] = (byte1 << 8) | byte2;
+        buffer[write_from + idx] = (byte1 << 8) | byte2;
         idx += 1;
     }
 }

@@ -92,7 +92,7 @@ impl VM {
 
     fn fetch_and_decode(&mut self) -> (OpCode, u16) {
         let pc = self.get_register(Register::PC as u16);
-        let instr = self.read_from_memory(pc as u16);
+        let instr = self.read_from_memory(pc);
 
         return (OpCode::from_raw_instr(instr), instr);
     }
