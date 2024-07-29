@@ -37,21 +37,29 @@ impl Trap {
                 Ok(())
             }
             Trap::OUT => {
-                let value = vm.get_register(Register::R0 as u16) as u8 as char;
-                print!("{}", value);
+                let value = vm.get_register(Register::R0 as u16) as u8;
+                print!("{}", value as char);
 
                 Ok(())
             }
             Trap::IN => {
                 print!("Enter a character: ");
                 stdout().flush().expect("Could not flush stdout");
-                let value = stdin().bytes().nth(0).unwrap().unwrap();
+                let value = std::io::stdin()
+                    .bytes()
+                    .next()
+                    .and_then(|result| result.ok())
+                    .map(|byte| byte as u16)
+                    .unwrap();
+
                 vm.set_register(Register::R0 as u16, value as u16);
+
                 Ok(())
             }
             Trap::PUTS => {
                 let mut address = vm.get_register(Register::R0 as u16);
                 let mut c = vm.read_from_memory(address);
+
                 while c != 0x0 {
                     print!("{}", c as u8 as char);
                     address += 1;
@@ -68,9 +76,9 @@ impl Trap {
 
                 while c != 0x0 {
                     let c1 = ((c & 0xFF) as u8) as char;
+                    print!("{}", c1);
                     let c2 = ((c >> 8) as u8) as char;
 
-                    print!("{}", c1);
                     if c2 != '\0' {
                         print!("{}", c2);
                     }
