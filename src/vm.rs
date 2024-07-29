@@ -72,7 +72,7 @@ impl VM {
     }
 
     fn increment_pc(&mut self) {
-        self.registers[Register::PC as usize] = self.registers[Register::PC as usize] + 1;
+        self.registers[Register::PC as usize] += 1;
     }
 
     /**
@@ -81,9 +81,6 @@ impl VM {
      */
     fn load_assembly(&mut self, origin: usize, file_path: &str) {
         // we'll load the whole file into memory
-        // this limits the file to be at most 128kb
-
-        // a better implementation would be to stream parts of the file as we are executing it
         read_file_as_u16(file_path, &mut self.memory, origin);
     }
 
@@ -102,8 +99,8 @@ impl VM {
         let value = self.get_register(register);
         let cond_flag = match value {
             0 => CondFlag::ZRO,
-            val if val >> 15 == 0 => CondFlag::POS,
-            _ => CondFlag::NEG,
+            val if val >> 15 != 0 => CondFlag::NEG,
+            _ => CondFlag::POS,
         };
 
         self.set_register(Register::COND as u16, cond_flag as u16);
