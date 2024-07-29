@@ -57,7 +57,7 @@ impl OpCode {
                 let pc_offset = sign_extend(raw_instr & 0x1FF, 9);
                 let pc = vm.get_register(Register::PC as u16);
 
-                if cond_flag == vm.get_register(Register::COND as u16) {
+                if cond_flag & vm.get_register(Register::COND as u16) != 0 {
                     vm.set_register(Register::PC as u16, pc.wrapping_add(pc_offset));
                 }
                 Ok(())
@@ -205,7 +205,7 @@ impl OpCode {
             }
             OpCode::RES => Ok(()), // RES does nothing
             OpCode::LEA => {
-                let r0 = (raw_instr >> 9) & 0x7;
+                let r0: u16 = (raw_instr >> 9) & 0x7;
                 let pc_offset = sign_extend(raw_instr & 0x1FF, 9);
                 let val = vm.get_register(Register::PC as u16).wrapping_add(pc_offset);
                 vm.set_register(r0, val);
