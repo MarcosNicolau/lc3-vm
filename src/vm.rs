@@ -4,7 +4,7 @@ use crate::{
     cond_flag::CondFlag,
     instructions::OpCode,
     register::{MMRegister, Register},
-    utils::read_file_as_u16,
+    utils::*,
 };
 
 pub const PC_START: u16 = 0x3000;
@@ -60,7 +60,6 @@ impl VM {
     }
 
     fn check_keyboard_status(&mut self) {
-        // read exactly one byte
         let mut buffer = [0; 1];
         stdin().read_exact(&mut buffer).unwrap();
 
@@ -82,12 +81,7 @@ impl VM {
      */
     fn load_assembly(&mut self, origin: usize, file_path: &str) {
         // we'll load the whole file into memory
-        // this limits the file to be at most 128kb
-        // a better implementation would be to stream parts of the file as we are executing it
-
-        // we'll send as much as the bytes as the memory can hold
-        let bytes_to_read = MEMORY_SIZE - origin;
-        read_file_as_u16(file_path, bytes_to_read, &mut self.memory, origin);
+        read_file_as_u16(file_path, &mut self.memory, origin);
     }
 
     fn fetch_and_decode(&mut self) -> (OpCode, u16) {
@@ -105,8 +99,8 @@ impl VM {
         let value = self.get_register(register);
         let cond_flag = match value {
             0 => CondFlag::ZRO,
-            val if val > 0 => CondFlag::POS,
-            _ => CondFlag::NEG,
+            val if val >> 15 != 0 => CondFlag::NEG,
+            _ => CondFlag::POS,
         };
 
         self.set_register(Register::COND as u16, cond_flag as u16);
@@ -121,6 +115,8 @@ impl VM {
         self.set_cond_flags(Register::R0 as u16);
         self.load_assembly(self.get_register(Register::PC as u16) as usize, file_path);
 
+        disable_input_buffering();
+
         loop {
             let (op_code, instr) = self.fetch_and_decode();
             self.increment_pc();
@@ -130,5 +126,7 @@ impl VM {
                 break;
             }
         }
+
+        restore_input_buffering();
     }
 }
